@@ -3,90 +3,161 @@ package piconot
 import java.io.File
 
 import picolib.maze.Maze
-import picolib.semantics.Anything
-import picolib.semantics.Blocked
-import picolib.semantics.East
-import picolib.semantics.GUIDisplay
-import picolib.semantics.North
-import picolib.semantics.Open
-import picolib.semantics.Picobot
-import picolib.semantics.Rule
-import picolib.semantics.South
-import picolib.semantics.State
-import picolib.semantics.Surroundings
-import picolib.semantics.TextDisplay
-import picolib.semantics.West
+import picolib.semantics._
 import scalafx.application.JFXApp
-
-import 
 
 /**
  *  This is an intentionally bad internal language, but it is picobot complete.
  */
-class OnO(val state:Int) {
-  require state % 4 == 0
-  def Go(to:ToType) : Seq[Rule] = {
-    val ruleN = Rule(State(state.toString), 
+class COMEFROM(state:Int) {
+  require ((state % 4) == 0)
+  
+  val nState = state
+  val wState = state + 1
+  val sState = state + 2
+  val eState = state + 3
+
+  // Anything ahead
+  def Go(to:ToType) = {
+
+    val ruleN = Rule(State(nState.toString), 
                      Surroundings(Anything, Anything, Anything, Anything),
-                     to(state),
-                     to.nextState(state))
-    val ruleE = Rule(State((state + 1).toString), 
+                     to.move(nState),
+                     to.nextState(nState))
+    val ruleW = Rule(State(wState.toString), 
                      Surroundings(Anything, Anything, Anything, Anything),
-                     to(state),
-                     to.nextState(state + ))
-    val ruleN = Rule(State((state + 2).toString), 
+                     to.move(wState),
+                     to.nextState(wState))
+    val ruleS = Rule(State((sState).toString), 
                      Surroundings(Anything, Anything, Anything, Anything),
-                     to(state),
-                     to.nextState(state))
-    val ruleN = Rule(State((state + 3).toString), 
+                     to.move(sState),
+                     to.nextState(sState))
+    val ruleE = Rule(State((eState).toString), 
                      Surroundings(Anything, Anything, Anything, Anything),
-                     to(state),
-                     to.nextState(state + 3))
+                     to.move(eState),
+                     to.nextState(eState))
+    val allRules = List(ruleN, ruleW, ruleS, ruleE)
+    COMEFROM.rules = COMEFROM.rules ++ allRules
   }
-  def GO(to:ToType) : Seq[Rule] = {}
-  def G0(to:ToType) : Seq[Rule] = {}
+
+  def fallThroughRule(initialState:Int) : Rule = {
+    Rule(State(initialState.toString), 
+         Surroundings(Anything, Anything, Anything, Anything),
+         StayHere,
+         State((initialState + 4).toString))
+  }
+
+  // Open ahead
+  def GO(to:ToType) = {
+    val ruleN = Rule(State(nState.toString), 
+                     Surroundings(Open, Anything, Anything, Anything),
+                     to.move(nState),
+                     to.nextState(nState))
+    val ruleW = Rule(State(wState.toString), 
+                     Surroundings(Anything, Anything, Open, Anything),
+                     to.move(wState),
+                     to.nextState(wState))
+    val ruleS = Rule(State((sState).toString), 
+                     Surroundings(Anything, Anything, Anything, Open),
+                     to.move(sState),
+                     to.nextState(sState))
+    val ruleE = Rule(State((eState).toString), 
+                     Surroundings(Anything, Open, Anything, Anything),
+                     to.move(eState),
+                     to.nextState(eState))
+    val allRules = List(ruleN, ruleW, ruleS, ruleE,
+                        fallThroughRule(state),
+                        fallThroughRule(state + 1),
+                        fallThroughRule(sState),
+                        fallThroughRule(eState))
+    COMEFROM.rules = COMEFROM.rules ++ allRules
+  }
+
+  // Blocked ahead
+  def G0(to:ToType) = {
+    val ruleN = Rule(State(nState.toString), 
+                     Surroundings(Blocked, Anything, Anything, Anything),
+                     to.move(nState),
+                     to.nextState(nState))
+    val ruleW = Rule(State(wState.toString), 
+                     Surroundings(Anything, Anything, Blocked, Anything),
+                     to.move(wState),
+                     to.nextState(wState))
+    val ruleS = Rule(State((sState).toString), 
+                     Surroundings(Anything, Anything, Anything, Blocked),
+                     to.move(sState),
+                     to.nextState(sState))
+    val ruleE = Rule(State((eState).toString), 
+                     Surroundings(Anything, Blocked, Anything, Anything),
+                     to.move(eState),
+                     to.nextState(eState))
+    val allRules = List(ruleN, ruleW, ruleS, ruleE,
+                        fallThroughRule(state),
+                        fallThroughRule(state + 1),
+                        fallThroughRule(sState),
+                        fallThroughRule(eState))
+    COMEFROM.rules = COMEFROM.rules ++ allRules 
+  }
 }
 
-object OnO {
-  def apply(userState:Int) = new OnO(userState * 4)
+object COMEFROM {
+  var rules : List[Rule] = List.empty[Rule]
+  def apply(userState:Int) = new COMEFROM(userState * 4)
+}
+
+object GOTO {
+  def apply(mazeName:String) = {
+    println(COMEFROM.rules)
+    val maze = Maze("resources" + File.separator + mazeName)
+
+    object GOTOBot extends Picobot(maze, COMEFROM.rules)
+      with TextDisplay with GUIDisplay
+
+    GOTOBot
+  }
 }
 
 abstract class ToType(val newState:Int) {
-  require newState % 4 == 0
   def move(state:Int) : MoveDirection
-  def nextState(oldState:Int) : Int = {
+  def nextState(oldState:Int) : State = {
     // Maintain directionality. Also each "state" corresponds to four states.
-    newState + (oldState % 4)
+    State((newState + (oldState % 4)).toString)
   }
 }
 
+// Turn left
 class To(state:Int) extends ToType(state) {
   override def move(state:Int) : MoveDirection = {
     StayHere
   }
-  override def nextState(oldState:Int) : Int = {
+  override def nextState(oldState:Int) : State = {
     super.nextState(oldState + 1)
   }
 }
 object To {
   def apply(userState:Int) = new To(userState * 4)
 }
+
+// Move forward
 class TO(state:Int) extends ToType(state) {
   override def move(state:Int) : MoveDirection = {
-    StayHere
+    println("Move: " + state.toString)
+    state % 4 match {
+      case 0 => North
+      case 1 => West
+      case 2 => South
+      case 3 => East
+    }
   }
 }
 object TO {
   def apply(userState:Int) = new TO(userState * 4)
 }
+
+// Stand still
 class T0(state:Int) extends ToType(state) {
   override def move(state:Int) : MoveDirection = {
-    state % 4 match {
-      case 0 => North
-      case 1 => East
-      case 2 => West
-      case 3 => South
-    }
+    StayHere
   }
 }
 object T0 {
