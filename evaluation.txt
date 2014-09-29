@@ -1,0 +1,43 @@
+When we first began implementing GOTObot, we couldn't figure out a
+clean way of implementing it without putting state numbers and thus
+some sort of begin line operator. Because ideally, GOTObot would use
+line numbers, and we didn't know a way to get line numbers in
+Scala. We also had trouble with Scala requiring parentheses for our
+integer literals. Thus, we impelemented the whole thing with a grammar
+that looked more like "COMEFROM (3) G0 T0 (1)". Unfortunately, this
+meant that commands could be defined out of order, and multiple
+commands could be defined for one state, which might be
+confusing. Plus, it just doesn't capture the nature of GOTO correctly.
+
+Once we had this working, we began trying to move towards our ideal
+grammar.  This required a significant reworking of the language, as it
+was originally implemented as a COMEFROM class, with different GO
+methods that took in ToType classes that specified movement and
+turning (what basically became MovementType in our final code). Now,
+our design just has the GoType object plus some global data, and we
+call the various TO functions on the subclasses of GoType (the TO
+functions generate rules based on their respective MovementTypes).
+Ultimately, this is actually cleaner than our original implementation,
+and has much less duplicated code.
+
+Our syntax changed only 1 on a scale from 1-10, relative to our ideal
+(it almost changed a lot more, as we described above). The only major
+change was the addition of spaces between the GO and TO commands,
+which was twofold in purpose: implementing that is simple, but gross,
+as you just have to make all the combinations of GO and TO, and also
+having the GO and TO separate better conveys the idea that each is
+paying attention to a different aspect of the problem, making it ever
+so slightly more useable as a language. Which, to be fair, is contrary
+to our design goals. We also had to add the GOTO(file) command to run
+GOTObot, but we think this is more a semantic of running the picobot
+than the actual GOTObot -> picobot encoding.
+
+We would say implementing our syntax was about a 5. The main
+challenges were figuring out line numbers, and implementing
+directionality. For the first, we have quasi-line numbers: states are
+implicitly numbered from 0 in the order they are defined, but blank
+lines are not counted. For the second, each user state is secretly
+four real states, one for each direction.
+
+We're pretty happy with our GOTObot. We think CS5 should switch to
+using it.

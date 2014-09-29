@@ -1,16 +1,67 @@
-Who is the target for this design, e.g., are you assuming any knowledge on the
-part of the language users?
+How GOTObot works: 
+each command takes the form 
+  GoCommand ToCommand state
+This is roughly analagous to 
+  if GoCommand { 
+    ToCommand
+    switch to state
+  } else {
+    fall through to next state
+  }
+States are based on line, with the first command implicitly being
+state 0, and incrementing after that. Note that state consists of
+the explicit line, and an implicit direction. GOTObot starts facing
+north. 
+
+The GoCommands are:
+Go: Wall ahead
+GO: Open ahead
+G0: Anything ahead
+
+The ToCommands are:
+To: Stay still
+TO: Move forward
+T0: Turn left
+
+These commands, over multiple states, can be combined to give full
+picobot functionality.
+
+Who is the target for this design, e.g., are you assuming any
+knowledge on the part of the language users?
+
+The target audience for this language is programmers who enjoy
+functional programming, as we want to infuriate them.
 
 Why did you choose this design, i.e., why did you think it would be a good idea
 for users to express the maze-searching computation using this syntax?
 
+We wanted to take a minimalist approach to picobot, and use as few
+commands as possible. We thought it was entertaining to make the
+syntax look like GOTOs. Plus, picobot, as a state machine, is
+basically GOTOs anyways.
+
 What behaviors are easier to express in your design than in Picobot’s original
 design?  If there are no such behaviors, why not?
+
+Directional-based behavior is easier to encode in GOTObot, as we built in
+directionality. For example, the left-hand rule, which can be thought of as
+"Turn left, go forward if you can, otherwise turn around" can be encoded in
+just four lines (turn left, go forward if you can, otherwise turn left turn left).
 
 What behaviors are more difficult to express in your design than in Picobot’s
 original design? If there are no such behaviors, why not?
 
+Specific surrounding-based behaviour is difficult, as to know your surroundings
+completely you would need to turn around 4 times and use lots of states to encode
+what directions had what.
+
 On a scale of 1–10 (where 10 is “very different”), how different is your syntax
 from PicoBot’s original design?
 
+8. It has the similar line by line examination, but we trade out looking and moving
+in all directions for looking and moving in only one direction, but having a concept
+of heading and turning.
+
 Is there anything you don’t like about your design?
+
+How could we not like GOTObot? Who doesn't like GOTOs?

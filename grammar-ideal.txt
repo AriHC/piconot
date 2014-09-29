@@ -1,0 +1,8 @@
+program = {command} ;
+wall_check = “go” | “g0” | “gO” ;
+action = “to” | “t0” | “tO” ;
+nonzero_one_digit =  “1” | “2” | “3” | “4” | “5” | “6” | “7” | “8” | “9” ;
+one_digit = nonzero_one_digit | “0” ; 
+two_digit = nonzero_one_digit, one_digit ;
+three_digit = two_digit, one_digit ;
+command = wall_check,  action, “ “, (one_digit | two_digit | three_digit), \n ;
